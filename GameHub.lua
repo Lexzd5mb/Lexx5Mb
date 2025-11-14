@@ -4,20 +4,20 @@
 
 print("[GameHub] Loaded successfully!")
 
--- UI FRAME SEDERHANA
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
 
--- FRAME UTAMA
+--====================================================--
+--               MAIN FRAME / UI UTAMA
+--====================================================--
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 240, 0, 380)
+Frame.Size = UDim2.new(0, 240, 0, 440)
 Frame.Position = UDim2.new(0.75, 0, 0.3, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.BorderSizePixel = 0
 Frame.Active = true
 Frame.Draggable = true
 
--- FRAME BORDER OUTLINE
 local Outline = Instance.new("UIStroke", Frame)
 Outline.Thickness = 2
 Outline.Color = Color3.fromRGB(0, 170, 255)
@@ -38,9 +38,8 @@ local TitleCorner = Instance.new("UICorner", Title)
 TitleCorner.CornerRadius = UDim.new(0, 8)
 
 --====================================================--
---                 FPS COUNTER DI UI
+--                FPS COUNTER
 --====================================================--
-
 local FPSLabel = Instance.new("TextLabel", Frame)
 FPSLabel.Size = UDim2.new(1, 0, 0, 25)
 FPSLabel.Position = UDim2.new(0, 0, 0, 35)
@@ -51,11 +50,10 @@ FPSLabel.Font = Enum.Font.GothamBold
 FPSLabel.Text = "FPS: ..."
 
 local RunService = game:GetService("RunService")
-local frames = 0
-local lastTime = tick()
+local frames, lastTime = 0, tick()
 
 RunService.RenderStepped:Connect(function()
-    frames = frames + 1
+    frames += 1
     if tick() - lastTime >= 1 then
         FPSLabel.Text = "FPS: " .. frames
         frames = 0
@@ -64,9 +62,8 @@ RunService.RenderStepped:Connect(function()
 end)
 
 --====================================================--
---                 BUTTON MAKER BARU
+--                BUTTON MAKER
 --====================================================--
-
 local function makeButton(text, order, callback)
     local btn = Instance.new("TextButton", Frame)
     btn.Size = UDim2.new(1, -20, 0, 35)
@@ -80,7 +77,6 @@ local function makeButton(text, order, callback)
     local corner = Instance.new("UICorner", btn)
     corner.CornerRadius = UDim.new(0, 6)
 
-    -- Hover effect
     btn.MouseEnter:Connect(function()
         btn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
     end)
@@ -92,8 +88,9 @@ local function makeButton(text, order, callback)
 end
 
 --====================================================--
---        BOOST LEVEL 1 — Ringan
+--                BOOST FUNCTIONS
 --====================================================--
+
 local function BoostFPS1()
     for _, v in ipairs(workspace:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Trail") then
@@ -104,51 +101,29 @@ local function BoostFPS1()
     print("[GameHub] FPS Boost Level 1 Activated!")
 end
 
---====================================================--
---        BOOST LEVEL 2 — Low / Medium
---====================================================--
 local function BoostFPS2()
     for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Enabled = false
-        end
-        if v:IsA("Texture") or v:IsA("Decal") then
-            v.Transparency = 1
-        end
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+        if v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
     end
-
     local L = game.Lighting
     L.GlobalShadows = false
     L.FogEnd = 1e9
     L.Brightness = 1
-
     print("[GameHub] FPS Boost Level 2 Activated!")
 end
 
---====================================================--
---        BOOST LEVEL 3 — Ultra Low / Potato Mode
---====================================================--
 local function BoostFPS3()
     for _, v in ipairs(workspace:GetDescendants()) do
-
-        if v:IsA("Texture") or v:IsA("Decal") then
-            v.Transparency = 1
-        end
-
-        if v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Enabled = false
-        end
-
-        if v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
-            v.Enabled = false
-        end
+        if v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+        if v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then v.Enabled = false end
 
         if v:IsA("BasePart") then
             v.Material = Enum.Material.SmoothPlastic
             v.Reflectance = 0
         end
     end
-
     local L = game.Lighting
     L.GlobalShadows = false
     L.FogEnd = 999999999
@@ -156,38 +131,131 @@ local function BoostFPS3()
     L.OutdoorAmbient = Color3.new(1,1,1)
     L.EnvironmentDiffuseScale = 0
     L.EnvironmentSpecularScale = 0
-
     print("[GameHub] FPS Boost Level 3 Activated!")
 end
 
---====================================================--
---        RESET FPS
---====================================================--
 local function ResetFPS()
     for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("Texture") or v:IsA("Decal") then
-            v.Transparency = 0
-        end
-        if v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Enabled = true
-        end
-        if v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
-            v.Enabled = true
-        end
+        if v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 0 end
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = true end
+        if v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then v.Enabled = true end
     end
     print("[GameHub] FPS Reset.")
 end
 
 --====================================================--
---                UI BUTTON ORDER
+-- UNIVERSAL AUTO EVENT (LIGHT VERSION)
 --====================================================--
 
+local autoCollect = false
+local autoSubmit = false
+
+local eventKeywords = {"event", "collect", "pickup", "drop", "reward", "item"}
+
+local function isEventObject(obj)
+    for _, key in ipairs(eventKeywords) do
+        if string.find(string.lower(obj.Name), key) then
+            return true
+        end
+    end
+    return false
+end
+
+-- AUTO COLLECT
+task.spawn(function()
+    while task.wait(0.2) do
+        if autoCollect then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and isEventObject(v.Parent) then
+                    pcall(function() v:InputHoldBegin() task.wait(0.1) v:InputHoldEnd() end)
+                end
+
+                if v:IsA("BasePart") and isEventObject(v) then
+                    pcall(function()
+                        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v, 0)
+                        task.wait()
+                        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v, 1)
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+-- AUTO SUBMIT BUTTONS
+task.spawn(function()
+    while task.wait(0.4) do
+        if autoSubmit then
+            for _, gui in ipairs(game:GetDescendants()) do
+                if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and isEventObject(gui) then
+                    pcall(function() gui:Activate() end)
+                end
+            end
+        end
+    end
+end)
+
+--====================================================--
+--          MINIMIZE SYSTEM (BUBBLE BUTTON)
+--====================================================--
+
+local MiniButton = Instance.new("TextButton", ScreenGui)
+MiniButton.Size = UDim2.new(0, 55, 0, 55)
+MiniButton.Position = UDim2.new(0.88,0,0.5,0)
+MiniButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+MiniButton.Text = "+"
+MiniButton.Visible = false
+MiniButton.Font = Enum.Font.GothamBold
+MiniButton.TextSize = 32
+MiniButton.TextColor3 = Color3.new(1,1,1)
+
+local MiniCorner = Instance.new("UICorner", MiniButton)
+MiniCorner.CornerRadius = UDim.new(1,0)
+
+MiniButton.Active = true
+MiniButton.Draggable = true
+
+local MinBtn = Instance.new("TextButton", Frame)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -40, 0, 5)
+MinBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 20
+MinBtn.TextColor3 = Color3.new(1,1,1)
+
+local MinCorner = Instance.new("UICorner", MinBtn)
+MinCorner.CornerRadius = UDim.new(1,0)
+
+MinBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    MiniButton.Visible = true
+end)
+
+MiniButton.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    MiniButton.Visible = false
+end)
+
+--====================================================--
+--                BUTTON ORDER
+--====================================================--
 makeButton("FPS Level 1 (Ringan)", 0, BoostFPS1)
 makeButton("FPS Level 2 (Low)", 1, BoostFPS2)
 makeButton("FPS Level 3 (Ultra Low)", 2, BoostFPS3)
 makeButton("Reset FPS", 3, ResetFPS)
-makeButton("Close UI", 4, function()
-    ScreenGui:Destroy()
+
+-- Tambahan fitur auto event
+makeButton("Auto Collect (Light)", 4, function()
+    autoCollect = not autoCollect
+    print("[GameHub] Auto Collect =", autoCollect)
 end)
 
-print("[GameHub] UI Loaded")
+makeButton("Auto Submit (Light)", 5, function()
+    autoSubmit = not autoSubmit
+    print("[GameHub] Auto Submit =", autoSubmit)
+end)
+
+makeButton("Close UI", 6, function() ScreenGui:Destroy() end)
+
+print("[GameHub] UI Loaded Successfully!")
