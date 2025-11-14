@@ -1,6 +1,5 @@
 --====================================================--
 --                GAME HUB by Lexx
---      (Untuk game kamu sendiri / Dev Tools)
 --====================================================--
 
 print("[GameHub] Loaded successfully!")
@@ -10,7 +9,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 220, 0, 260)
+Frame.Size = UDim2.new(0, 220, 0, 360)
 Frame.Position = UDim2.new(0.75, 0, 0.3, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Frame.BorderSizePixel = 0
@@ -37,16 +36,24 @@ local function makeButton(text, order, callback)
 end
 
 --====================================================--
---                FUNGSI BOOST FPS AMAN
+--        BOOST LEVEL 1 — Ringan
 --====================================================--
-
-local function BoostFPS()
-    -- Matikan partikel
+local function BoostFPS1()
     for _, v in ipairs(workspace:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Trail") then
             v.Enabled = false
         end
-        if v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
+    end
+    game.Lighting.GlobalShadows = false
+    print("[GameHub] FPS Boost Level 1 Activated!")
+end
+
+--====================================================--
+--        BOOST LEVEL 2 — Low / Medium
+--====================================================--
+local function BoostFPS2()
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") then
             v.Enabled = false
         end
         if v:IsA("Texture") or v:IsA("Decal") then
@@ -54,20 +61,56 @@ local function BoostFPS()
         end
     end
 
-    -- Setting lighting
-    game.Lighting.GlobalShadows = false
-    game.Lighting.FogEnd = 1e9
-    game.Lighting.Brightness = 1
+    local L = game.Lighting
+    L.GlobalShadows = false
+    L.FogEnd = 1e9
+    L.Brightness = 1
 
-    -- Setting quality
-    pcall(function()
-        local gameSettings = UserSettings():GetService("UserGameSettings")
-        gameSettings.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
-    end)
-
-    print("[GameHub] FPS Boost Activated!")
+    print("[GameHub] FPS Boost Level 2 Activated!")
 end
 
+--====================================================--
+--        BOOST LEVEL 3 — Ultra Low / Potato Mode
+--====================================================--
+local function BoostFPS3()
+    for _, v in ipairs(workspace:GetDescendants()) do
+
+        -- Matikan semua texture
+        if v:IsA("Texture") or v:IsA("Decal") then
+            v.Transparency = 1
+        end
+
+        -- Matikan particle
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false
+        end
+
+        -- Matikan semua lampu
+        if v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
+            v.Enabled = false
+        end
+
+        -- Ganti semua material jadi smooth plastic
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.Reflectance = 0
+        end
+    end
+
+    local L = game.Lighting
+    L.GlobalShadows = false
+    L.FogEnd = 999999999
+    L.Ambient = Color3.new(1,1,1)
+    L.OutdoorAmbient = Color3.new(1,1,1)
+    L.EnvironmentDiffuseScale = 0
+    L.EnvironmentSpecularScale = 0
+
+    print("[GameHub] FPS Boost Level 3 Activated!")
+end
+
+--====================================================--
+--        RESET FPS
+--====================================================--
 local function ResetFPS()
     for _, v in ipairs(workspace:GetDescendants()) do
         if v:IsA("Texture") or v:IsA("Decal") then
@@ -80,23 +123,18 @@ local function ResetFPS()
             v.Enabled = true
         end
     end
-
     print("[GameHub] FPS Reset.")
 end
 
 --====================================================--
---                   BUTTONS UI
+--                UI BUTTON ORDER
 --====================================================--
 
-makeButton("Boost FPS", 0, function()
-    BoostFPS()
-end)
-
-makeButton("Reset FPS", 1, function()
-    ResetFPS()
-end)
-
-makeButton("Close UI", 2, function()
+makeButton("FPS Level 1 (Ringan)", 0, BoostFPS1)
+makeButton("FPS Level 2 (Low)", 1, BoostFPS2)
+makeButton("FPS Level 3 (Ultra Low)", 2, BoostFPS3)
+makeButton("Reset FPS", 3, ResetFPS)
+makeButton("Close UI", 4, function()
     ScreenGui:Destroy()
 end)
 
