@@ -11,7 +11,7 @@ ScreenGui.Parent = game.CoreGui
 --               MAIN FRAME / UI UTAMA
 --====================================================--
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 240, 0, 440)
+Frame.Size = UDim2.new(0, 240, 0, 380)
 Frame.Position = UDim2.new(0.75, 0, 0.3, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.BorderSizePixel = 0
@@ -90,7 +90,6 @@ end
 --====================================================--
 --                BOOST FUNCTIONS
 --====================================================--
-
 local function BoostFPS1()
     for _, v in ipairs(workspace:GetDescendants()) do
         if v:IsA("ParticleEmitter") or v:IsA("Trail") then
@@ -118,7 +117,6 @@ local function BoostFPS3()
         if v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
         if v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
         if v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then v.Enabled = false end
-
         if v:IsA("BasePart") then
             v.Material = Enum.Material.SmoothPlastic
             v.Reflectance = 0
@@ -144,76 +142,29 @@ local function ResetFPS()
 end
 
 --====================================================--
--- UNIVERSAL AUTO EVENT (LIGHT VERSION)
+--          MINIMIZE SYSTEM (BUBBLE BUTTON) DENGAN GAMBAR
 --====================================================--
 
-local autoCollect = false
-local autoSubmit = false
-
-local eventKeywords = {"event", "collect", "pickup", "drop", "reward", "item"}
-
-local function isEventObject(obj)
-    for _, key in ipairs(eventKeywords) do
-        if string.find(string.lower(obj.Name), key) then
-            return true
-        end
-    end
-    return false
-end
-
--- AUTO COLLECT
-task.spawn(function()
-    while task.wait(0.2) do
-        if autoCollect then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("ProximityPrompt") and isEventObject(v.Parent) then
-                    pcall(function() v:InputHoldBegin() task.wait(0.1) v:InputHoldEnd() end)
-                end
-
-                if v:IsA("BasePart") and isEventObject(v) then
-                    pcall(function()
-                        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v, 0)
-                        task.wait()
-                        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, v, 1)
-                    end)
-                end
-            end
-        end
-    end
-end)
-
--- AUTO SUBMIT BUTTONS
-task.spawn(function()
-    while task.wait(0.4) do
-        if autoSubmit then
-            for _, gui in ipairs(game:GetDescendants()) do
-                if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and isEventObject(gui) then
-                    pcall(function() gui:Activate() end)
-                end
-            end
-        end
-    end
-end)
-
---====================================================--
---          MINIMIZE SYSTEM (BUBBLE BUTTON)
---====================================================--
-
-local MiniButton = Instance.new("TextButton", ScreenGui)
+local MiniButton = Instance.new("ImageButton", ScreenGui)
 MiniButton.Size = UDim2.new(0, 55, 0, 55)
-MiniButton.Position = UDim2.new(0.88,0,0.5,0)
+MiniButton.Position = UDim2.new(0.88, 0, 0.5, 0)
 MiniButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-MiniButton.Text = "+"
+MiniButton.Image = "https://i.imgur.com/0hgL2hp.png"
+MiniButton.ScaleType = Enum.ScaleType.Fit
 MiniButton.Visible = false
-MiniButton.Font = Enum.Font.GothamBold
-MiniButton.TextSize = 32
-MiniButton.TextColor3 = Color3.new(1,1,1)
 
 local MiniCorner = Instance.new("UICorner", MiniButton)
 MiniCorner.CornerRadius = UDim.new(1,0)
 
 MiniButton.Active = true
 MiniButton.Draggable = true
+
+MiniButton.MouseEnter:Connect(function()
+    MiniButton.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+end)
+MiniButton.MouseLeave:Connect(function()
+    MiniButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+end)
 
 local MinBtn = Instance.new("TextButton", Frame)
 MinBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -244,18 +195,6 @@ makeButton("FPS Level 1 (Ringan)", 0, BoostFPS1)
 makeButton("FPS Level 2 (Low)", 1, BoostFPS2)
 makeButton("FPS Level 3 (Ultra Low)", 2, BoostFPS3)
 makeButton("Reset FPS", 3, ResetFPS)
+makeButton("Close UI", 4, function() ScreenGui:Destroy() end)
 
--- Tambahan fitur auto event
-makeButton("Auto Collect (Light)", 4, function()
-    autoCollect = not autoCollect
-    print("[GameHub] Auto Collect =", autoCollect)
-end)
-
-makeButton("Auto Submit (Light)", 5, function()
-    autoSubmit = not autoSubmit
-    print("[GameHub] Auto Submit =", autoSubmit)
-end)
-
-makeButton("Close UI", 6, function() ScreenGui:Destroy() end)
-
-print("[GameHub] UI Loaded Successfully!")
+print("[GameHub] UI Loaded")
