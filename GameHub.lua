@@ -10,7 +10,7 @@ spawn(function()
         fps = false
     }
 
-    -- UI
+    -- UI (punya lo, ga diubah)
     local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
     gui.Name = "LagHub"
 
@@ -35,7 +35,7 @@ spawn(function()
     local webBtn = makeBtn("ANTI WEB (BRUTAL)",5)
     local fpsBtn = makeBtn("FPS BOOST",50)
 
-    -- DRAG
+    -- DRAG (tetap)
     local dragging, dragStart, startPos
     frame.InputBegan:Connect(function(i)
         if i.UserInputType.Name=="MouseButton1" then
@@ -63,70 +63,78 @@ spawn(function()
         end
     end)
 
-    -- DETEKSI WEB
+    -- DETEKSI
     local function isWeb(v)
         local n = string.lower(v.Name)
         return n:find("web") or n:find("spider") or n:find("trap")
     end
 
-    -- 🔥 BRUTAL WEB REMOVER
-    local function nukeWeb(v)
-        pcall(function()
-            if isWeb(v) then
-                v:Destroy()
-                return
-            end
+    local function isNear(v)
+        local char = player.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
 
-            if v:IsA("ParticleEmitter") and isWeb(v.Parent.Name) then
-                v:Destroy()
-            end
-
-            if v:IsA("Trail") and isWeb(v.Parent.Name) then
-                v:Destroy()
-            end
-        end)
+        local root = char.HumanoidRootPart
+        return (v.Position - root.Position).Magnitude < 40
     end
 
-    -- 🚀 FPS BOOST
-    local function boost(v)
-        pcall(function()
-            if v:IsA("BasePart") then
-                v.CastShadow = false
-                if v.Material == Enum.Material.Neon then
-                    v.Material = Enum.Material.Plastic
+    -- QUEUE SYSTEM (BIAR GA NGELAG)
+    local queue = {}
+
+    workspace.DescendantAdded:Connect(function(v)
+        table.insert(queue, v)
+    end)
+
+    -- PROCESS LOOP (di throttle)
+    task.spawn(function()
+        while true do
+            for i = 1, math.min(#queue, 30) do
+                local v = table.remove(queue, 1)
+
+                if v then
+                    pcall(function()
+
+                        -- 🕸️ ANTI WEB (fokus dekat player)
+                        if states.web and v:IsA("BasePart") and isNear(v) then
+                            if isWeb(v) or (v.Transparency > 0.2 and v.Size.Magnitude < 6) then
+                                v:Destroy()
+                                return
+                            end
+                        end
+
+                        -- 🚀 FPS BOOST
+                        if states.fps then
+                            if v:IsA("BasePart") then
+                                v.CastShadow = false
+                                if v.Material == Enum.Material.Neon then
+                                    v.Material = Enum.Material.Plastic
+                                end
+                            end
+
+                            if v:IsA("ParticleEmitter") then
+                                v.Rate = 5
+                            end
+
+                            if v:IsA("Trail") then
+                                v.Lifetime = NumberRange.new(0.05)
+                            end
+
+                            if v:IsA("PointLight") or v:IsA("SpotLight") then
+                                v.Enabled = false
+                            end
+                        end
+
+                    end)
                 end
             end
 
-            if v:IsA("ParticleEmitter") then
-                v.Rate = 5
-            end
-
-            if v:IsA("Trail") then
-                v.Lifetime = NumberRange.new(0.05)
-            end
-
-            if v:IsA("PointLight") or v:IsA("SpotLight") then
-                v.Enabled = false
-            end
-        end)
-    end
-
-    local function refresh()
-        for _,v in pairs(workspace:GetDescendants()) do
-            if states.web then
-                nukeWeb(v)
-            end
-            if states.fps then
-                boost(v)
-            end
+            task.wait(0.1) -- 🔥 throttle biar CPU turun
         end
-    end
+    end)
 
-    -- BUTTONS
+    -- BUTTON
     webBtn.MouseButton1Click:Connect(function()
         states.web = not states.web
         webBtn.Text = "ANTI WEB (BRUTAL) : "..(states.web and "ON" or "OFF")
-        refresh()
     end)
 
     fpsBtn.MouseButton1Click:Connect(function()
@@ -138,18 +146,6 @@ spawn(function()
             settings().Rendering.QualityLevel = "Level01"
         else
             Lighting.GlobalShadows = true
-        end
-
-        refresh()
-    end)
-
-    -- AUTO HANDLE SPAWN
-    workspace.DescendantAdded:Connect(function(v)
-        if states.web then
-            nukeWeb(v)
-        end
-        if states.fps then
-            boost(v)
         end
     end)
 end)
