@@ -6,9 +6,8 @@ spawn(function()
     if not player then return end
 
     local states = {
-        antilag = false,
         web = false,
-        particle = false
+        fps = false
     }
 
     -- UI
@@ -16,23 +15,25 @@ spawn(function()
     gui.Name = "LagHub"
 
     local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0,200,0,150)
+    frame.Size = UDim2.new(0,220,0,120)
     frame.Position = UDim2.new(0,20,0,200)
-    frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
-    local function makeButton(text, posY)
-        local btn = Instance.new("TextButton", frame)
-        btn.Size = UDim2.new(1,0,0,30)
-        btn.Position = UDim2.new(0,0,0,posY)
-        btn.Text = text.." : OFF"
-        btn.TextColor3 = Color3.new(1,1,1)
-        btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-        return btn
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+
+    local function makeBtn(text, y)
+        local b = Instance.new("TextButton", frame)
+        b.Size = UDim2.new(1,-10,0,35)
+        b.Position = UDim2.new(0,5,0,y)
+        b.Text = text.." : OFF"
+        b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        b.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+        return b
     end
 
-    local antiBtn = makeButton("Anti Lag",0)
-    local webBtn = makeButton("Hide Web",40)
-    local partBtn = makeButton("Low Particle",80)
+    local webBtn = makeBtn("ANTI WEB (BRUTAL)",5)
+    local fpsBtn = makeBtn("FPS BOOST",50)
 
     -- DRAG
     local dragging, dragStart, startPos
@@ -62,65 +63,79 @@ spawn(function()
         end
     end)
 
-    -- DETECT WEB
-    local function isWeb(name)
-        name = string.lower(name)
-        return name:find("web") or name:find("spider")
+    -- DETEKSI WEB
+    local function isWeb(v)
+        local n = string.lower(v.Name)
+        return n:find("web") or n:find("spider") or n:find("trap")
     end
 
-    -- APPLY
-    local function apply(v)
+    -- 🔥 BRUTAL WEB REMOVER
+    local function nukeWeb(v)
         pcall(function()
-            if states.web then
-                if v:IsA("BasePart") and isWeb(v.Name) then
-                    v.LocalTransparencyModifier = 1
-                    v.CanCollide = false
-                end
-                if v:IsA("ParticleEmitter") and isWeb(v.Name) then
-                    v.Enabled = false
-                end
-                if v:IsA("Trail") and isWeb(v.Name) then
-                    v.Enabled = false
+            if isWeb(v) then
+                v:Destroy()
+                return
+            end
+
+            if v:IsA("ParticleEmitter") and isWeb(v.Parent.Name) then
+                v:Destroy()
+            end
+
+            if v:IsA("Trail") and isWeb(v.Parent.Name) then
+                v:Destroy()
+            end
+        end)
+    end
+
+    -- 🚀 FPS BOOST
+    local function boost(v)
+        pcall(function()
+            if v:IsA("BasePart") then
+                v.CastShadow = false
+                if v.Material == Enum.Material.Neon then
+                    v.Material = Enum.Material.Plastic
                 end
             end
 
-            if states.particle then
-                if v:IsA("ParticleEmitter") then
-                    v.Rate = 10
-                end
-                if v:IsA("Trail") then
-                    v.Lifetime = NumberRange.new(0.1)
-                end
+            if v:IsA("ParticleEmitter") then
+                v.Rate = 5
             end
 
-            if states.antilag then
-                if v:IsA("BasePart") then
-                    v.CastShadow = false
-                    if v.Material == Enum.Material.Neon then
-                        v.Material = Enum.Material.Plastic
-                    end
-                end
-                if v:IsA("PointLight") or v:IsA("SpotLight") then
-                    v.Range = 8
-                    v.Brightness = 1
-                end
+            if v:IsA("Trail") then
+                v.Lifetime = NumberRange.new(0.05)
+            end
+
+            if v:IsA("PointLight") or v:IsA("SpotLight") then
+                v.Enabled = false
             end
         end)
     end
 
     local function refresh()
         for _,v in pairs(workspace:GetDescendants()) do
-            apply(v)
+            if states.web then
+                nukeWeb(v)
+            end
+            if states.fps then
+                boost(v)
+            end
         end
     end
 
     -- BUTTONS
-    antiBtn.MouseButton1Click:Connect(function()
-        states.antilag = not states.antilag
-        antiBtn.Text = "Anti Lag : "..(states.antilag and "ON" or "OFF")
+    webBtn.MouseButton1Click:Connect(function()
+        states.web = not states.web
+        webBtn.Text = "ANTI WEB (BRUTAL) : "..(states.web and "ON" or "OFF")
+        refresh()
+    end)
 
-        if states.antilag then
+    fpsBtn.MouseButton1Click:Connect(function()
+        states.fps = not states.fps
+        fpsBtn.Text = "FPS BOOST : "..(states.fps and "ON" or "OFF")
+
+        if states.fps then
             Lighting.GlobalShadows = false
+            settings().Rendering.QualityLevel = "Level01"
         else
             Lighting.GlobalShadows = true
         end
@@ -128,19 +143,13 @@ spawn(function()
         refresh()
     end)
 
-    webBtn.MouseButton1Click:Connect(function()
-        states.web = not states.web
-        webBtn.Text = "Hide Web : "..(states.web and "ON" or "OFF")
-        refresh()
-    end)
-
-    partBtn.MouseButton1Click:Connect(function()
-        states.particle = not states.particle
-        partBtn.Text = "Low Particle : "..(states.particle and "ON" or "OFF")
-        refresh()
-    end)
-
+    -- AUTO HANDLE SPAWN
     workspace.DescendantAdded:Connect(function(v)
-        apply(v)
+        if states.web then
+            nukeWeb(v)
+        end
+        if states.fps then
+            boost(v)
+        end
     end)
 end)
