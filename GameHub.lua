@@ -16,10 +16,30 @@ spawn(function()
     gui.Name = "LagHub"
 
     local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0,230,0,160)
+    frame.Size = UDim2.new(0,240,0,180)
     frame.Position = UDim2.new(0,20,0,200)
     frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    frame.Active = true
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+
+    -- TITLE
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1,0,0,30)
+    title.Text = "LAG HUB"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.BackgroundTransparency = 1
+
+    -- CLOSE BUTTON
+    local close = Instance.new("TextButton", frame)
+    close.Size = UDim2.new(0,30,0,30)
+    close.Position = UDim2.new(1,-30,0,0)
+    close.Text = "X"
+    close.BackgroundColor3 = Color3.fromRGB(150,40,40)
+    close.TextColor3 = Color3.new(1,1,1)
+
+    close.MouseButton1Click:Connect(function()
+        gui:Destroy()
+    end)
 
     local function makeBtn(text, y)
         local b = Instance.new("TextButton", frame)
@@ -32,55 +52,50 @@ spawn(function()
         return b
     end
 
-    local webBtn = makeBtn("ANTI WEB",5)
-    local fpsBtn = makeBtn("FPS BOOST",50)
-    local petBtn = makeBtn("HIDE PET (SELF)",95)
+    local webBtn = makeBtn("ANTI WEB",35)
+    local fpsBtn = makeBtn("FPS BOOST",75)
+    local petBtn = makeBtn("HIDE PET (ALL)",115)
 
-    -- DRAG
-    local dragging, dragStart, startPos
-    frame.InputBegan:Connect(function(i)
-        if i.UserInputType.Name=="MouseButton1" then
+    -- 🔥 DRAG FIX (WORKING)
+    local UIS = game:GetService("UserInputService")
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = i.Position
+            dragStart = input.Position
             startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end)
 
-    frame.InputEnded:Connect(function(i)
-        if i.UserInputType.Name=="MouseButton1" then
-            dragging = false
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
         end
     end)
 
-    frame.InputChanged:Connect(function(i)
-        if dragging and i.UserInputType.Name=="MouseMovement" then
-            local delta = i.Position - dragStart
-            frame.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
         end
     end)
-
-    -- DETEKSI
-    local function isWeb(v)
-        local n = string.lower(v.Name)
-        return n:find("web") or n:find("spider") or n:find("trap")
-    end
-
-    local function isNear(v)
-        local char = player.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
-        local root = char.HumanoidRootPart
-        return (v.Position - root.Position).Magnitude < 40
-    end
-
-    local function isOwnPet(v)
-        if not player.Character then return false end
-        return v:IsDescendantOf(player.Character)
-    end
 
     -- QUEUE
     local queue = {}
@@ -92,41 +107,39 @@ spawn(function()
     task.spawn(function()
         while true do
 
-            for i = 1, math.min(#queue, 40) do
+            for i = 1, math.min(#queue, 60) do
                 local v = table.remove(queue, 1)
 
                 if v then
                     pcall(function()
 
+                        local name = string.lower(v.Name)
+
                         -- 🕸️ ANTI WEB
-                        if states.web and v:IsA("BasePart") and isNear(v) then
-                            if isWeb(v) or (v.Transparency > 0.2 and v.Size.Magnitude < 6) then
+                        if states.web then
+                            if name:find("web") or name:find("spider") or name:find("trap") then
                                 v:Destroy()
                                 return
                             end
-                        end
 
-                        if states.web and (v:IsA("ParticleEmitter") or v:IsA("Trail")) then
-                            if v.Parent and isWeb(v.Parent) then
+                            if v:IsA("ParticleEmitter") or v:IsA("Trail") then
                                 v.Enabled = false
                             end
                         end
 
-                        -- 🚀 FPS BOOST
+                        -- 🚀 FPS BOOST (LEBIH KERAS)
                         if states.fps then
                             if v:IsA("BasePart") then
                                 v.CastShadow = false
-                                if v.Material == Enum.Material.Neon then
-                                    v.Material = Enum.Material.Plastic
-                                end
+                                v.Material = Enum.Material.Plastic
                             end
 
-                            if v:IsA("ParticleEmitter") then
-                                v.Rate = 5
+                            if v:IsA("Decal") or v:IsA("Texture") then
+                                v.Transparency = 1
                             end
 
-                            if v:IsA("Trail") then
-                                v.Lifetime = NumberRange.new(0.05)
+                            if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                                v.Enabled = false
                             end
 
                             if v:IsA("PointLight") or v:IsA("SpotLight") then
@@ -134,16 +147,22 @@ spawn(function()
                             end
                         end
 
-                        -- 🐾 HIDE PET SENDIRI
+                        -- 🐾 HIDE PET (GLOBAL FIX)
                         if states.pet then
-                            if v:IsA("BasePart") and isOwnPet(v) then
-                                v.LocalTransparencyModifier = 1
-                                v.CanCollide = false
-                            end
+                            if v:IsA("Model") then
+                                local n = string.lower(v.Name)
 
-                            if v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                                if isOwnPet(v) then
-                                    v.Enabled = false
+                                if n:find("pet") or n:find("spider") then
+                                    for _, part in pairs(v:GetDescendants()) do
+                                        if part:IsA("BasePart") then
+                                            part.LocalTransparencyModifier = 1
+                                            part.CanCollide = false
+                                        end
+
+                                        if part:IsA("ParticleEmitter") or part:IsA("Trail") then
+                                            part.Enabled = false
+                                        end
+                                    end
                                 end
                             end
                         end
@@ -156,7 +175,7 @@ spawn(function()
         end
     end)
 
-    -- BUTTON
+    -- BUTTONS
     webBtn.MouseButton1Click:Connect(function()
         states.web = not states.web
         webBtn.Text = "ANTI WEB : "..(states.web and "ON" or "OFF")
