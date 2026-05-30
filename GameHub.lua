@@ -118,8 +118,8 @@ end)
 
 task.spawn(function()
     while true do
-        local Minutes = tonumber(IntervalBox.Text) or 1
-        task.wait(Minutes * 60)
+        local Interval = tonumber(IntervalBox.Text) or 60
+        task.wait(Interval)
 
         if Enabled then
             TeleportService:Teleport(game.PlaceId, Player)
