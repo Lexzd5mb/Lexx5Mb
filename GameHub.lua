@@ -33,7 +33,7 @@ Title.Parent = Main
 local IntervalBox = Instance.new("TextBox")
 IntervalBox.Size = UDim2.new(0.85, 0, 0, 35)
 IntervalBox.Position = UDim2.new(0.075, 0, 0, 50)
-IntervalBox.Text = "60"
+IntervalBox.Text = "3600"
 IntervalBox.PlaceholderText = "Interval (detik)"
 IntervalBox.BackgroundColor3 = Color3.fromRGB(35,35,35)
 IntervalBox.TextColor3 = Color3.new(1,1,1)
@@ -118,7 +118,7 @@ end)
 
 task.spawn(function()
     while true do
-        local Interval = tonumber(IntervalBox.Text) or 60
+        local Interval = tonumber(IntervalBox.Text) or 3600
         task.wait(Interval)
 
         if Enabled then
