@@ -61,25 +61,37 @@ ToggleCorner.Parent = Toggle
 
 -- Drag GUI
 local UIS = game:GetService("UserInputService")
-local dragging, dragStart, startPos
+
+local dragging = false
+local dragStart
+local startPos
 
 Main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+
         dragging = true
         dragStart = input.Position
         startPos = Main.Position
+    end
+end)
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+Main.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+
+        dragging = false
     end
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+
         local delta = input.Position - dragStart
+
         Main.Position = UDim2.new(
             startPos.X.Scale,
             startPos.X.Offset + delta.X,
@@ -106,8 +118,8 @@ end)
 
 task.spawn(function()
     while true do
-        local Interval = tonumber(IntervalBox.Text) or 60
-        task.wait(Interval)
+        local Minutes = tonumber(IntervalBox.Text) or 1
+        task.wait(Minutes * 60)
 
         if Enabled then
             TeleportService:Teleport(game.PlaceId, Player)
