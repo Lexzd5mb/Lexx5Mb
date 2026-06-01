@@ -18,15 +18,15 @@ local Humanoid = Character:WaitForChild("Humanoid")
 -- ==============================================
 local CONFIG = {
     AutoCollect       = true,
-    TeleportMode      = true,
-    Delay             = 0.3,
+    TeleportMode      = false,
+    Delay             = 0.1,
     DebugMode         = false,
 
     -- Prioritas: jika true, ambil mutasi duluan walaupun lebih jauh
-    PrioritizeMutation = true,
+    PrioritizeMutation = false,
 
     -- Filter: hanya ambil jika ada mutasi? (false = ambil semua)
-    OnlyMutation      = false,
+    OnlyMutation      = true,
 }
 
 -- ==============================================
@@ -37,17 +37,10 @@ local CONFIG = {
 -- Semua nama buah/tanaman di GAG
 local FRUIT_NAMES = {
     -- Common
-    "carrot","strawberry","corn","tomato","daffodil","wheat",
+    "tomato","daffodil","wheat",
     -- Uncommon
-    "blueberry","orange_tulip","pumpkin","bamboo","coconut","cactus",
-    -- Rare
-    "dragon_fruit","mango","grape","mushroom","pepper","cacao",
-    -- Legendary
-    "beanstalk","durian","watermelon","pineapple","lotus",
-    -- Mythical
-    "moon_fruit","moon_flower","burning_blossom","venus_flytrap",
-    "lemon","sunflower","red_clover","lavender","bird_of_paradise",
-    -- General fallback
+    "blueberry"
+  -- General fallback
     "fruit","plant","crop","flower","seed","harvest",
 }
 
