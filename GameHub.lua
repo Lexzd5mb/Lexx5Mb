@@ -76,11 +76,15 @@ end
 -- ==============================================
 local function DetectMutation(name)
     local lower = name:lower()
-    for mutName, mutData in pairs(MUTATION_LOOKUP) do
-        if lower:find(mutName) then
-            return mutData
-        end
+
+    if lower:find("rainbow") then
+        return {name = "Rainbow", priority = 10}
+    elseif lower:find("golden") then
+        return {name = "Golden", priority = 9}
+    elseif lower:find("silver") then
+        return {name = "Silver", priority = 8}
     end
+
     return nil
 end
 
@@ -286,17 +290,19 @@ local lastMutationMsg = "🔍 Menunggu mutasi..."
 
 local function UpdateGUI(mutMsg)
     if CONFIG.AutoCollect then
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 160, 60)
-        ToggleBtn.Text = "ON  |  [F] Toggle"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 70)
+        ToggleBtn.Text = "🟢 AUTO COLLECT ON"
         StatusLabel.Text = "Status: AKTIF ✅"
     else
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(160, 40, 40)
-        ToggleBtn.Text = "OFF  |  [F] Toggle"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        ToggleBtn.Text = "🔴 AUTO COLLECT OFF"
         StatusLabel.Text = "Status: NONAKTIF ❌"
     end
+
     if mutMsg then
         lastMutationMsg = mutMsg
     end
+
     MutationLog.Text = lastMutationMsg
 end
 
@@ -306,11 +312,10 @@ local function Toggle()
     print("[GAG] Auto Collect: " .. (CONFIG.AutoCollect and "ON ✅" or "OFF ❌"))
 end
 
-ToggleBtn.MouseButton1Click:Connect(Toggle)
-UserInputService.InputBegan:Connect(function(input, gpe)
-    if not gpe and input.KeyCode == Enum.KeyCode.F then Toggle() end
+ToggleBtn.MouseButton1Click:Connect(function()
+    CONFIG.AutoCollect = not CONFIG.AutoCollect
+    UpdateGUI()
 end)
-
 -- ==============================================
 -- MAIN LOOP
 -- ==============================================
@@ -351,9 +356,12 @@ task.spawn(function()
         for _, target in ipairs(targets) do
             if not target.object or not target.object.Parent then continue end
 
-            if CONFIG.TeleportMode then
-                SafeTeleport(target.position)
-            end
+            if not CONFIG.TeleportMode then
+    Humanoid:MoveTo(target.position)
+    Humanoid.MoveToFinished:Wait(2)
+else
+    SafeTeleport(target.position)
+end
 
             local ok = TryInteract(target.object)
             if ok then
