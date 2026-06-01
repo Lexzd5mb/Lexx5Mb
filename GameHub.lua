@@ -357,8 +357,8 @@ task.spawn(function()
             if not target.object or not target.object.Parent then continue end
 
             if not CONFIG.TeleportMode then
-    Humanoid:MoveTo(target.position)
-    Humanoid.MoveToFinished:Wait(2)
+Humanoid:MoveTo(target.position)
+Humanoid.MoveToFinished:Wait()
 else
     SafeTeleport(target.position)
 end
