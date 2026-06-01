@@ -1,128 +1,390 @@
-local TeleportService = game:GetService("TeleportService")
+-- ==============================================
+--   AUTO COLLECT + VARIANT/MUTASI DETECTOR
+--       GROW A GARDEN (Roblox) - v2
+-- ==============================================
+
 local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- ==============================================
+-- KONFIGURASI
+-- ==============================================
+local CONFIG = {
+    AutoCollect       = true,
+    TeleportMode      = true,
+    Delay             = 0.3,
+    DebugMode         = false,
+
+    -- Prioritas: jika true, ambil mutasi duluan walaupun lebih jauh
+    PrioritizeMutation = true,
+
+    -- Filter: hanya ambil jika ada mutasi? (false = ambil semua)
+    OnlyMutation      = false,
+}
+
+-- ==============================================
+-- DATA BUAH & VARIANT/MUTASI
+-- (Berdasarkan data Grow a Garden Wiki)
+-- ==============================================
+
+-- Semua nama buah/tanaman di GAG
+local FRUIT_NAMES = {
+    -- Common
+    "carrot","strawberry","corn","tomato","daffodil","wheat",
+    -- Uncommon
+    "blueberry","orange_tulip","pumpkin","bamboo","coconut","cactus",
+    -- Rare
+    "dragon_fruit","mango","grape","mushroom","pepper","cacao",
+    -- Legendary
+    "beanstalk","durian","watermelon","pineapple","lotus",
+    -- Mythical
+    "moon_fruit","moon_flower","burning_blossom","venus_flytrap",
+    "lemon","sunflower","red_clover","lavender","bird_of_paradise",
+    -- General fallback
+    "fruit","plant","crop","flower","seed","harvest",
+}
+
+-- Semua variant/mutasi yang ada di GAG
+local MUTATIONS = {
+    -- Tier warna dasar
+    { name = "Rainbow",   color = Color3.fromRGB(255, 100, 255), priority = 10 },
+    { name = "Golden",    color = Color3.fromRGB(255, 215, 0),   priority = 9  },
+    { name = "Disco",     color = Color3.fromRGB(255, 50, 200),  priority = 9  },
+    { name = "Moonlit",   color = Color3.fromRGB(150, 150, 255), priority = 8  },
+    { name = "Celestial", color = Color3.fromRGB(100, 200, 255), priority = 8  },
+    -- Tier khusus
+    { name = "Frozen",    color = Color3.fromRGB(173, 216, 230), priority = 7  },
+    { name = "Plasma",    color = Color3.fromRGB(200, 0, 255),   priority = 7  },
+    { name = "Magma",     color = Color3.fromRGB(255, 80, 0),    priority = 7  },
+    { name = "Shocked",   color = Color3.fromRGB(255, 255, 0),   priority = 6  },
+    { name = "Verdant",   color = Color3.fromRGB(0, 220, 80),    priority = 6  },
+    { name = "Wet",       color = Color3.fromRGB(0, 150, 255),   priority = 5  },
+    { name = "Chilled",   color = Color3.fromRGB(180, 230, 255), priority = 5  },
+    { name = "Pollinated",color = Color3.fromRGB(255, 230, 100), priority = 4  },
+    { name = "Bloodlit",  color = Color3.fromRGB(200, 0, 0),     priority = 6  },
+    { name = "Sandy",     color = Color3.fromRGB(210, 180, 140), priority = 3  },
+    { name = "Heavenly",  color = Color3.fromRGB(255, 255, 200), priority = 7  },
+    { name = "Windswept", color = Color3.fromRGB(200, 240, 255), priority = 4  },
+    { name = "Zombified", color = Color3.fromRGB(100, 200, 50),  priority = 5  },
+}
+
+-- Buat set untuk lookup cepat
+local MUTATION_LOOKUP = {}
+for _, m in ipairs(MUTATIONS) do
+    MUTATION_LOOKUP[m.name:lower()] = m
+end
+
+local FRUIT_LOOKUP = {}
+for _, f in ipairs(FRUIT_NAMES) do
+    FRUIT_LOOKUP[f:lower()] = true
+end
+
+-- ==============================================
+-- LOG
+-- ==============================================
+local function Log(msg)
+    if CONFIG.DebugMode then print("[GAG] " .. tostring(msg)) end
+end
+
+-- ==============================================
+-- DETEKSI MUTASI DARI NAMA OBJEK
+-- Format nama di GAG biasanya: "Golden Carrot", "Rainbow Strawberry", dll
+-- ==============================================
+local function DetectMutation(name)
+    local lower = name:lower()
+    for mutName, mutData in pairs(MUTATION_LOOKUP) do
+        if lower:find(mutName) then
+            return mutData
+        end
+    end
+    return nil
+end
+
+local function IsFruit(name)
+    local lower = name:lower()
+    for fruitName, _ in pairs(FRUIT_LOOKUP) do
+        if lower:find(fruitName) then return true end
+    end
+    return false
+end
+
+-- ==============================================
+-- INTERAKSI
+-- ==============================================
+local function SafeTeleport(pos)
+    if HumanoidRootPart then
+        HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 4, 0))
+        task.wait(0.15)
+    end
+end
+
+local function TryInteract(obj)
+    for _, v in ipairs(obj:GetDescendants()) do
+        if v:IsA("ProximityPrompt") and v.Enabled then
+            fireproximityprompt(v)
+            return true
+        end
+        if v:IsA("ClickDetector") then
+            fireclickdetector(v)
+            return true
+        end
+    end
+    -- Coba remote
+    local remoteNames = {"HarvestCrop","Harvest","CollectFruit","PickFruit","Collect"}
+    for _, rName in ipairs(remoteNames) do
+        local r = ReplicatedStorage:FindFirstChild(rName, true)
+        if r and r:IsA("RemoteEvent") then
+            r:FireServer(obj)
+            return true
+        end
+    end
+    return false
+end
+
+-- ==============================================
+-- SCAN WORKSPACE
+-- ==============================================
+local function ScanTargets()
+    local results = {}
+
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        local name = obj.Name
+        local mutation = DetectMutation(name)
+        local isFruit = IsFruit(name)
+
+        -- Hanya proses kalau buah atau ada mutasi
+        if not (isFruit or mutation) then continue end
+
+        -- Filter OnlyMutation
+        if CONFIG.OnlyMutation and not mutation then continue end
+
+        local pos = nil
+        if obj:IsA("BasePart") then
+            pos = obj.Position
+        elseif obj:IsA("Model") then
+            if obj.PrimaryPart then
+                pos = obj.PrimaryPart.Position
+            else
+                for _, p in ipairs(obj:GetDescendants()) do
+                    if p:IsA("BasePart") then pos = p.Position break end
+                end
+            end
+        elseif obj:IsA("ProximityPrompt") and obj.Enabled then
+            local parent = obj.Parent
+            if parent and parent:IsA("BasePart") then
+                pos = parent.Position
+                -- Override nama dengan parent
+                name = parent.Name
+                mutation = DetectMutation(name)
+                isFruit = IsFruit(name)
+                obj = parent
+            end
+        end
+
+        if not pos then continue end
+
+        local dist = (HumanoidRootPart.Position - pos).Magnitude
+
+        -- Cek duplikat
+        local dup = false
+        for _, r in ipairs(results) do
+            if r.object == obj then dup = true break end
+        end
+        if dup then continue end
+
+        table.insert(results, {
+            object   = obj,
+            name     = name,
+            position = pos,
+            distance = dist,
+            mutation = mutation,
+            priority = mutation and mutation.priority or 0,
+        })
+    end
+
+    -- Sort: mutasi prioritas tinggi dulu, lalu jarak
+    table.sort(results, function(a, b)
+        if CONFIG.PrioritizeMutation then
+            if a.priority ~= b.priority then
+                return a.priority > b.priority
+            end
+        end
+        return a.distance < b.distance
+    end)
+
+    return results
+end
+
+-- ==============================================
 -- GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoRejoinGUI"
-ScreenGui.ResetOnSpawn = false
-pcall(function()
-    ScreenGui.Parent = game:GetService("CoreGui")
-end)
+-- ==============================================
+local GUI, StatusLabel, MutationLog, ToggleBtn
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.fromOffset(280, 160)
-Main.Position = UDim2.new(0.5, -140, 0.5, -80)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Main.BorderSizePixel = 0
-Main.Parent = ScreenGui
-
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
-Corner.Parent = Main
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.BackgroundTransparency = 1
-Title.Text = "Auto Rejoin"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.Parent = Main
-
-local IntervalBox = Instance.new("TextBox")
-IntervalBox.Size = UDim2.new(0.85, 0, 0, 35)
-IntervalBox.Position = UDim2.new(0.075, 0, 0, 50)
-IntervalBox.Text = "3600"
-IntervalBox.PlaceholderText = "Interval (detik)"
-IntervalBox.BackgroundColor3 = Color3.fromRGB(35,35,35)
-IntervalBox.TextColor3 = Color3.new(1,1,1)
-IntervalBox.Font = Enum.Font.Gotham
-IntervalBox.TextSize = 14
-IntervalBox.Parent = Main
-
-local BoxCorner = Instance.new("UICorner")
-BoxCorner.CornerRadius = UDim.new(0, 8)
-BoxCorner.Parent = IntervalBox
-
-local Toggle = Instance.new("TextButton")
-Toggle.Size = UDim2.new(0.85, 0, 0, 35)
-Toggle.Position = UDim2.new(0.075, 0, 0, 100)
-Toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
-Toggle.TextColor3 = Color3.new(1,1,1)
-Toggle.Font = Enum.Font.GothamBold
-Toggle.TextSize = 14
-Toggle.Text = "ON"
-Toggle.Parent = Main
-
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 8)
-ToggleCorner.Parent = Toggle
-
--- Drag GUI
-local UIS = game:GetService("UserInputService")
-
-local dragging = false
-local dragStart
-local startPos
-
-Main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
+local function CreateGUI()
+    if LocalPlayer.PlayerGui:FindFirstChild("GAG_GUI2") then
+        LocalPlayer.PlayerGui.GAG_GUI2:Destroy()
     end
-end)
 
-Main.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "GAG_GUI2"
+    sg.ResetOnSpawn = false
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    sg.Parent = LocalPlayer.PlayerGui
 
-        dragging = false
-    end
-end)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 260, 0, 155)
+    frame.Position = UDim2.new(0, 12, 0, 12)
+    frame.BackgroundColor3 = Color3.fromRGB(12, 22, 12)
+    frame.BorderSizePixel = 0
+    frame.Parent = sg
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Color = Color3.fromRGB(80, 200, 80)
+    stroke.Thickness = 1.5
 
-UIS.InputChanged:Connect(function(input)
-    if dragging and (
-        input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch
-    ) then
+    -- Title
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 28)
+    title.Position = UDim2.new(0, 0, 0, 5)
+    title.BackgroundTransparency = 1
+    title.Text = "🌱 Grow a Garden Auto v2"
+    title.TextColor3 = Color3.fromRGB(120, 255, 100)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBold
+    title.Parent = frame
 
-        local delta = input.Position - dragStart
+    -- Status
+    local status = Instance.new("TextLabel")
+    status.Name = "Status"
+    status.Size = UDim2.new(1, -10, 0, 18)
+    status.Position = UDim2.new(0, 5, 0, 35)
+    status.BackgroundTransparency = 1
+    status.Text = "Status: AKTIF ✅"
+    status.TextColor3 = Color3.fromRGB(180, 255, 180)
+    status.TextScaled = true
+    status.Font = Enum.Font.Gotham
+    status.TextXAlignment = Enum.TextXAlignment.Left
+    status.Parent = frame
 
-        Main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
+    -- Mutation log
+    local mutlog = Instance.new("TextLabel")
+    mutlog.Name = "MutLog"
+    mutlog.Size = UDim2.new(1, -10, 0, 50)
+    mutlog.Position = UDim2.new(0, 5, 0, 55)
+    mutlog.BackgroundColor3 = Color3.fromRGB(5, 15, 5)
+    mutlog.BackgroundTransparency = 0.3
+    mutlog.TextColor3 = Color3.fromRGB(255, 230, 100)
+    mutlog.Text = "🔍 Menunggu mutasi..."
+    mutlog.TextScaled = true
+    mutlog.Font = Enum.Font.Gotham
+    mutlog.TextWrapped = true
+    mutlog.Parent = frame
+    Instance.new("UICorner", mutlog).CornerRadius = UDim.new(0, 6)
 
--- Auto execute (langsung aktif)
-local Enabled = true
+    -- Toggle
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = UDim2.new(0.05, 0, 0, 115)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 160, 60)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = "ON  |  [F] Toggle"
+    btn.Font = Enum.Font.GothamSemibold
+    btn.TextScaled = true
+    btn.Parent = frame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
-Toggle.MouseButton1Click:Connect(function()
-    Enabled = not Enabled
+    return status, mutlog, btn
+end
 
-    if Enabled then
-        Toggle.Text = "ON"
-        Toggle.BackgroundColor3 = Color3.fromRGB(0,170,127)
+StatusLabel, MutationLog, ToggleBtn = CreateGUI()
+
+local lastMutationMsg = "🔍 Menunggu mutasi..."
+
+local function UpdateGUI(mutMsg)
+    if CONFIG.AutoCollect then
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 160, 60)
+        ToggleBtn.Text = "ON  |  [F] Toggle"
+        StatusLabel.Text = "Status: AKTIF ✅"
     else
-        Toggle.Text = "OFF"
-        Toggle.BackgroundColor3 = Color3.fromRGB(170,50,50)
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(160, 40, 40)
+        ToggleBtn.Text = "OFF  |  [F] Toggle"
+        StatusLabel.Text = "Status: NONAKTIF ❌"
     end
+    if mutMsg then
+        lastMutationMsg = mutMsg
+    end
+    MutationLog.Text = lastMutationMsg
+end
+
+local function Toggle()
+    CONFIG.AutoCollect = not CONFIG.AutoCollect
+    UpdateGUI()
+    print("[GAG] Auto Collect: " .. (CONFIG.AutoCollect and "ON ✅" or "OFF ❌"))
+end
+
+ToggleBtn.MouseButton1Click:Connect(Toggle)
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.F then Toggle() end
 end)
+
+-- ==============================================
+-- MAIN LOOP
+-- ==============================================
+print("[GAG] ✅ Script v2 aktif! Tekan F untuk toggle.")
+print("[GAG] 🌟 Deteksi mutasi: " .. #MUTATIONS .. " tipe")
 
 task.spawn(function()
     while true do
-        local Interval = tonumber(IntervalBox.Text) or 3600
-        task.wait(Interval)
+        task.wait(CONFIG.Delay)
+        if not CONFIG.AutoCollect then continue end
 
-        if Enabled then
-            TeleportService:Teleport(game.PlaceId, Player)
+        Character = LocalPlayer.Character
+        if not Character then continue end
+        HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+        Humanoid = Character:FindFirstChild("Humanoid")
+        if not HumanoidRootPart or not Humanoid or Humanoid.Health <= 0 then continue end
+
+        local targets = ScanTargets()
+        Log("Target: " .. #targets)
+
+        local mutFound = {}
+        for _, t in ipairs(targets) do
+            if t.mutation then
+                table.insert(mutFound, t.mutation.name .. " " .. t.name)
+            end
+        end
+
+        -- Update GUI mutasi
+        if #mutFound > 0 then
+            local msg = "🌟 Mutasi: " .. table.concat(mutFound, ", ")
+            UpdateGUI(msg)
+            print("[GAG] " .. msg)
+        else
+            UpdateGUI("🔍 Tidak ada mutasi terdeteksi")
+        end
+
+        -- Harvest semua
+        for _, target in ipairs(targets) do
+            if not target.object or not target.object.Parent then continue end
+
+            if CONFIG.TeleportMode then
+                SafeTeleport(target.position)
+            end
+
+            local ok = TryInteract(target.object)
+            if ok then
+                local label = target.mutation and ("⭐ [" .. target.mutation.name .. "] ") or ""
+                Log("Harvested: " .. label .. target.name)
+            end
+
+            task.wait(0.1)
         end
     end
 end)
