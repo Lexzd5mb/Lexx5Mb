@@ -56,23 +56,7 @@ local MUTATIONS = {
     -- Tier warna dasar
     { name = "Rainbow",   color = Color3.fromRGB(255, 100, 255), priority = 10 },
     { name = "Golden",    color = Color3.fromRGB(255, 215, 0),   priority = 9  },
-    { name = "Disco",     color = Color3.fromRGB(255, 50, 200),  priority = 9  },
-    { name = "Moonlit",   color = Color3.fromRGB(150, 150, 255), priority = 8  },
-    { name = "Celestial", color = Color3.fromRGB(100, 200, 255), priority = 8  },
-    -- Tier khusus
-    { name = "Frozen",    color = Color3.fromRGB(173, 216, 230), priority = 7  },
-    { name = "Plasma",    color = Color3.fromRGB(200, 0, 255),   priority = 7  },
-    { name = "Magma",     color = Color3.fromRGB(255, 80, 0),    priority = 7  },
-    { name = "Shocked",   color = Color3.fromRGB(255, 255, 0),   priority = 6  },
-    { name = "Verdant",   color = Color3.fromRGB(0, 220, 80),    priority = 6  },
-    { name = "Wet",       color = Color3.fromRGB(0, 150, 255),   priority = 5  },
-    { name = "Chilled",   color = Color3.fromRGB(180, 230, 255), priority = 5  },
-    { name = "Pollinated",color = Color3.fromRGB(255, 230, 100), priority = 4  },
-    { name = "Bloodlit",  color = Color3.fromRGB(200, 0, 0),     priority = 6  },
-    { name = "Sandy",     color = Color3.fromRGB(210, 180, 140), priority = 3  },
-    { name = "Heavenly",  color = Color3.fromRGB(255, 255, 200), priority = 7  },
-    { name = "Windswept", color = Color3.fromRGB(200, 240, 255), priority = 4  },
-    { name = "Zombified", color = Color3.fromRGB(100, 200, 50),  priority = 5  },
+    { name = "silver",     color = Color3.fromRGB(192, 192, 192),  priority = 9  },
 }
 
 -- Buat set untuk lookup cepat
