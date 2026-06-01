@@ -37,9 +37,9 @@ local CONFIG = {
 -- Semua nama buah/tanaman di GAG
 local FRUIT_NAMES = {
     -- Common
-    "tomato","daffodil","wheat",
+    "tomato",
     -- Uncommon
-    "blueberry"
+    "blueberry",
   -- General fallback
     "fruit","plant","crop","flower","seed","harvest",
 }
