@@ -19,7 +19,7 @@ local Humanoid = Character:WaitForChild("Humanoid")
 local CONFIG = {
     AutoCollect       = true,
     TeleportMode      = false,
-    Delay             = 0.1,
+    Delay             = 0.5,
     DebugMode         = false,
 
     -- Prioritas: jika true, ambil mutasi duluan walaupun lebih jauh
