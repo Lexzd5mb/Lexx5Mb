@@ -1,5 +1,5 @@
 --============================================================
--- GARDEN HUB
+-- SerenePlume HUB
 -- ALL-IN-ONE SCRIPT
 --============================================================
 
@@ -145,7 +145,7 @@ end
 local MyFarm = GetFarm(LocalPlayer.Name)
 
 if not MyFarm then
-    warn("[GardenHub] Farm tidak ditemukan.")
+    warn("[SerenePlume HUB] Farm tidak ditemukan.")
 end
 
 
@@ -1185,7 +1185,7 @@ RunService.Stepped:Connect(
 
 local OldGui =
     PlayerGui:FindFirstChild(
-        "GardenHub"
+        "SerenePlume HUB"
     )
 
 if OldGui then
@@ -1194,7 +1194,7 @@ end
 
 
 MainGui = Instance.new("ScreenGui")
-MainGui.Name = "GardenHub"
+MainGui.Name = "SerenePlume HUB"
 MainGui.ResetOnSpawn = false
 MainGui.IgnoreGuiInset = true
 MainGui.ZIndexBehavior =
@@ -1320,7 +1320,7 @@ Title.Position =
 Title.BackgroundTransparency = 1
 
 Title.Text =
-    "GARDEN HUB"
+    "SerenePlume HUB"
 
 Title.TextColor3 =
     TEXT
@@ -1793,75 +1793,146 @@ local function AddButton(
 end
 
 
-local function AddToggle(
-    Parent,
-    Text,
-    Default,
-    Callback
-)
+local function AddToggle(Parent, Text, Default, Callback)
 
-    local Value =
-        Default
+    local Value = Default
 
-    local Button =
-        AddButton(
-            Parent,
-            "",
-            function()
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, 0, 0, 48)
+    Button.BackgroundColor3 = Color3.fromRGB(29, 31, 38)
+    Button.BorderSizePixel = 0
+    Button.AutoButtonColor = false
+    Button.Text = ""
+    Button.Parent = Parent
 
-                Value =
-                    not Value
-
-                Callback(Value)
-
-                Button.Text =
-                    Text
-                    .. "  ["
-                    .. (
-                        Value
-                        and "ON"
-                        or "OFF"
-                    )
-                    .. "]"
-
-                Button.BackgroundColor3 =
-                    Value
-                    and Color3.fromRGB(
-                        45,
-                        95,
-                        45
-                    )
-                    or PANEL2
-
-            end
-        )
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 9)
+    Corner.Parent = Button
 
 
-    Button.Text =
-        Text
-        .. "  ["
-        .. (
-            Value
-            and "ON"
-            or "OFF"
-        )
-        .. "]"
+    -- Label
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -75, 1, 0)
+    Label.Position = UDim2.fromOffset(15, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Text
+    Label.TextColor3 = Color3.fromRGB(235, 235, 240)
+    Label.TextSize = 13
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Button
 
 
-    Button.BackgroundColor3 =
-        Value
-        and Color3.fromRGB(
-            45,
-            95,
-            45
-        )
-        or PANEL2
+    -- Status
+    local Status = Instance.new("TextLabel")
+    Status.Size = UDim2.fromOffset(45, 20)
+    Status.Position = UDim2.new(1, -105, 0.5, -10)
+    Status.BackgroundTransparency = 1
+    Status.TextSize = 11
+    Status.Font = Enum.Font.GothamBold
+    Status.Parent = Button
 
+
+    -- Switch background
+    local Switch = Instance.new("Frame")
+    Switch.Size = UDim2.fromOffset(42, 22)
+    Switch.Position = UDim2.new(1, -52, 0.5, -11)
+    Switch.BorderSizePixel = 0
+    Switch.Parent = Button
+
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(1, 0)
+    SwitchCorner.Parent = Switch
+
+
+    -- Switch circle
+    local Circle = Instance.new("Frame")
+    Circle.Size = UDim2.fromOffset(16, 16)
+    Circle.BorderSizePixel = 0
+    Circle.Parent = Switch
+
+    local CircleCorner = Instance.new("UICorner")
+    CircleCorner.CornerRadius = UDim.new(1, 0)
+    CircleCorner.Parent = Circle
+
+
+    local function Update()
+
+        if Value then
+
+            Button.BackgroundColor3 =
+                Color3.fromRGB(35, 65, 38)
+
+            Switch.BackgroundColor3 =
+                Color3.fromRGB(75, 160, 75)
+
+            Circle.BackgroundColor3 =
+                Color3.fromRGB(255, 255, 255)
+
+            Circle.Position =
+                UDim2.fromOffset(
+                    22,
+                    3
+                )
+
+            Status.Text = "ON"
+
+            Status.TextColor3 =
+                Color3.fromRGB(
+                    100,
+                    220,
+                    100
+                )
+
+        else
+
+            Button.BackgroundColor3 =
+                Color3.fromRGB(29, 31, 38)
+
+            Switch.BackgroundColor3 =
+                Color3.fromRGB(65, 67, 75)
+
+            Circle.BackgroundColor3 =
+                Color3.fromRGB(180, 180, 185)
+
+            Circle.Position =
+                UDim2.fromOffset(
+                    4,
+                    3
+                )
+
+            Status.Text = "OFF"
+
+            Status.TextColor3 =
+                Color3.fromRGB(
+                    145,
+                    145,
+                    150
+                )
+
+        end
+
+    end
+
+
+    Button.MouseButton1Click:Connect(
+        function()
+
+            Value = not Value
+
+            Update()
+
+            Callback(Value)
+
+        end
+    )
+
+
+    Update()
 
     return Button
 
 end
-
 
 --============================================================
 -- CREATE TABS
@@ -1916,7 +1987,7 @@ local MoveTab =
 
 AddLabel(
     HomeTab,
-    "GARDEN HUB"
+    "SerenePlume HUB"
 )
 
 AddLabel(
@@ -2778,9 +2849,9 @@ TabButtons.Home.BackgroundColor3 =
 
 
 Notify(
-    "Garden Hub loaded"
+    "SerenePlume HUB loaded"
 )
 
 print(
-    "[GardenHub] Loaded successfully."
+    "[SerenePlume HUB] Loaded successfully."
 )
