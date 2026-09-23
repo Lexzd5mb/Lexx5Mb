@@ -44,8 +44,8 @@ local Config = {
     NoClip = false,
     AutoWalkDelay = 5,
 
-    AutoUnequip = true,
-    MaxAge = 10,
+    AutoUnequip = false,
+    MaxAge = 60,
 }
 
 
